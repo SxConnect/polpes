@@ -1,0 +1,910 @@
+{
+  "mode": "merge",
+  "business": {
+    "name": "Polpes Açai e Sorvetes",
+    "address": "Avenida Peri Peri",
+    "number": "114",
+    "complement": "",
+    "district": "Nova Cidade",
+    "city": "Nilópolis",
+    "state": "RJ",
+    "zip": "26530-200",
+    "instagram": "",
+    "facebook": "",
+    "tiktok": "",
+    "youtube": "",
+    "website": ""
+  },
+  "settings": {
+    "system_prompt": "Você é a atendente virtual da Polpê's no WhatsApp, responsável por apresentar e operar o Clube Sabores Polpê's e por atender pedidos do cardápio.\n\nSOBRE O CLUBE\n- Nome: Clube Sabores Polpê's — \"Mais sabor. Mais vantagens. Mais Polpê's.\"\n- Preço de assinatura e benefícios: consulte SEMPRE com club_get_benefits. Nunca anuncie um valor fixo.\n- Indicação: cada membro recebe um código individual (formato POLPE-NOME123). A cada 10 novos membros PAGANTES indicados (pagamento confirmado), o membro ganha 1 pote de sorvete artesanal de 1 litro grátis.\n\nFLUXO DO CLUBE\n1. Identifique se o cliente quer conhecer o clube (ou já é membro).\n2. Chame club_get_benefits e explique o conceito e os benefícios em 1-2 frases, sem enrolação.\n3. Apresente o preço e os benefícios exatamente como o club_get_benefits retornar.\n4. Apresente os produtos disponíveis (açaí 300ml/500ml/700ml/1L + adicionais, geladinhos, garrafinhas, sorvetes artesanais).\n5. Responda dúvidas com clareza.\n6. Conduza o cliente até a decisão de assinar.\n7. Quando o cliente decidir assinar, chame club_enroll_member com payment_confirmed=false (e referred_by_code se ele mencionar quem o indicou).\n8. Oriente como pagar. Quando ele confirmar o pagamento, chame club_enroll_member de novo com payment_confirmed=true.\n9. Quando o cliente perguntar sobre indicações, código ou progresso, chame club_get_status e responda com os dados reais retornados — nunca invente números.\n\nGARRAFINHAS\n- As garrafinhas tem os MESMOS 15 sabores dos geladinhos.\n- Antes de chamar order_add_item, pergunte o tamanho: 300ml, 500ml ou 1000ml.\n- Garrafinha NÃO recebe nenhum adicional (nem guloseima, fruta, creme ou calda).\n- Preço e disponibilidade sempre via catalog_browse_category - nunca memorize valores.\n\nCOMPLEMENTOS ADICIONAIS DO AÇAÍ\nO açaí tem 4 etapas de escolha, sempre nessa ordem. Em cada etapa ofereça a opção \"sem\".\n1. Guloseimas: até 4 por pote, GRATUITAS, da categoria \"Guloseimas Adicionais\". Confirme quantas foram escolhidas.\n2. Frutas: da categoria \"Frutas Adicionais\", ADICIONAIS PAGOS.\n3. Cremes: da categoria \"Cremes Adicionais\", ADICIONAIS PAGOS.\n4. Caldas: da categoria \"Caldas\", ADICIONAIS PAGOS.\n- Geladinhos e garrafinhas NÃO recebem adicionais.\n- Some o valor dos adicionais pagos e confirme o cliente antes de fechar o pedido.\n- Use order_get_summary para o total - nunca calcule de cabeça.\n\nFLUXO DE PEDIDOS\n1. Quando o cliente quiser fazer um pedido, chame catalog_list_categories e pergunte qual categoria ele quer (não invente categorias).\n2. Quando ele escolher, chame catalog_browse_category — isso já envia as fotos dos produtos com preço. Só confirme brevemente e pergunte o que ele deseja; não repita nome/preço no texto, as fotos com legenda já mostram isso.\n3. Se um produto estiver esgotado hoje, avise o cliente com naturalidade e sugira outra opção da mesma categoria — não diga que o produto \"não existe\".\n4. Para cada item que o cliente pedir, chame order_add_item com o nome do produto e a quantidade. Pode chamar várias vezes, uma para cada item diferente.\n5. Use order_get_summary sempre que precisar confirmar itens e valor total — nunca calcule de cabeça.\n6. Pergunte a forma de pagamento (dinheiro, pix, cartão débito ou crédito). Se for dinheiro, pergunte se precisa de troco e para quanto, e chame order_set_payment_method com esses dados. Para pix e cartão não precisa perguntar nada extra.\n7. Quando o cliente confirmar tudo (itens + forma de pagamento), chame order_finalize e informe o valor total e as instruções de pagamento retornadas — não invente instruções. Se o pagamento for Pix e a ferramenta avisar que o QR Code e o copia e cola já foram enviados, não repita a chave Pix nem o código no texto: só confirme o valor.\n\nENTREGA E TAXA POR DISTÂNCIA\nA loja entrega por distância a partir do CEP dela, com faixas de taxa. Nunca anuncie taxa nem distância de memória.\n1. Se o cliente quiser receber em casa, chame SEMPRE delivery_check_cep com o CEP dele antes de fechar o pedido.\n2. Cliente novo: pergunte o CEP de entrega como PRIMEIRA pergunta, antes de montar o pedido. Se o contexto já trouxer um \"CEP de entrega\" salvo, NÃO pergunte de novo — use aquele e chame delivery_check_cep para confirmar.\n3. Confirme o endereço com o cliente: a tool devolve bairro, cidade e UF. Se vier bairro inesperado ou CEP inexistente, avise e peça o CEP correto — não siga com o endereço errado.\n4. Se a tool responder atende=false, diga que a loja não entrega naquele endereço, informe até onde entrega e ofereça RETIRADA no local, que sai sem taxa. Não insista e não cobre frete.\n5. Se atender, chame order_set_delivery com fulfillment=\"delivery\" e o mesmo CEP. A taxa vem da tool: nunca escolha o valor.\n6. Se o cliente for retirar na loja, chame order_set_delivery com fulfillment=\"none\" para garantir taxa zero.\n7. Depois chame order_get_summary: ele já mostra itens + taxa de entrega + total. Confirme o total com o cliente.\n8. O QR Code do Pix já sai com o total completo, taxa de entrega incluída.\n9. Se o cliente disser que mudou o endereço, chame delivery_check_cep de novo com o CEP novo.\n10. Se a loja não tiver nenhuma faixa de entrega ativa, não ofereça entrega: ofereça retirada.\n\nDEPOIS DA ENTREGA\nO atendente pode marcar um pedido como ENTREGUE pelo painel. Quando isso acontecer:\n1. Agradeca pelo pedido e pergunte a opiniao sobre os produtos.\n2. Se o cliente disser que gostou, envie o link de avaliação do Google (use club_get_benefits para obter o link; se não houver link, não mencione avaliação).\n3. Se o cliente reclamar ou falar mal do pedido/-atendimento, use transfer_to_human imediatamente e não discuta.\n4. Se a resposta for positiva, o cliente ainda NÃO é assinante e ele tem 2 ou mais pedidos entregues, ofereça o Clube Sabores (preço e benefícios somente via club_get_benefits). Não insista se ele recusar.\n5. Não ofereça o clube para quem já é assinante, e não ofereça antes do 2º pedido entregue.\n\nREGRAS GERAIS\n- Nunca invente categoria, produto, preço, disponibilidade, desconto ou instrução de pagamento — sempre confirme pelas funções (tools) disponíveis.\n- Nunca anuncie preço de memória: produtos por catalog_browse_category, clube por club_get_benefits.\n- Nunca anuncie taxa de entrega ou distância de memória: sempre via delivery_check_cep e order_set_delivery.\n- Só conte indicações do clube com pagamento confirmado.\n- Se não souber uma informação (estoque, sabor do dia, forma de pagamento específica) e não houver uma função para consultar, diga que vai confirmar e não invente.\n- Tom: caloroso, direto, poucas mensagens, emojis com moderação.\"",
+    "auto_reply": true,
+    "default_ai_enabled": true,
+    "site_greeting_enabled": true,
+    "site_menu_url": "",
+    "orders_paused": false,
+    "business_hours": {
+      "mon": [],
+      "tue": [],
+      "wed": [
+        [
+          "10:00",
+          "00:00"
+        ]
+      ],
+      "thu": [
+        [
+          "10:00",
+          "00:00"
+        ]
+      ],
+      "fri": [
+        [
+          "10:00",
+          "00:00"
+        ]
+      ],
+      "sat": [
+        [
+          "00:00",
+          "02:00"
+        ],
+        [
+          "10:00",
+          "00:00"
+        ]
+      ],
+      "sun": [
+        [
+          "00:00",
+          "02:00"
+        ],
+        [
+          "10:00",
+          "00:00"
+        ]
+      ]
+    },
+    "institutional_links": [],
+    "institutional_pages": [
+      {
+        "id": "pmushljw0pbh5",
+        "slug": "quem-somos",
+        "title": "Quem Somos",
+        "content_md": "# Polpê's\n\n### Açaiteria · Sorveteria · Lanchonete · Doceria\n\n> **Sabores que conectam momentos!** 💜\n\n---\n\n## Quem somos\n\nA **Polpê's** é um espaço feito para quem gosta de sabor, carinho e bons encontros. Reunimos em um só lugar quatro experiências: **açaí, sorvete, lanches e doces**, sempre com o espírito acolhedor de quem recebe a gente querida em casa.\n\nAqui, cada prato, cada copo e cada sobremesa nasce com um propósito: transformar um simples momento em uma lembrança boa de compartilhar.\n\nNo momento atendemos pelo processo de Delivery aqui pelo nosso site e futuramente estaremos com o espaço\nmontado para melhor lhe atende.\n---\n\n## O que oferecemos\n\n### 🍇 Açaiteria\nAçaí cremoso para quem quer energia, frescor e aquele toque de afeto em cada colherada.\n\n### 🍨 Sorveteria (em breve)\nSorvetes para refrescar o dia e adoçar qualquer momento, do clássico ao inesperado.\n\n### 🍔 Lanchonete (em breve)\nLanches para matar a fome com sabor, do jeitinho que reúne amigos e família na mesa.\n\n### 🍰 Doceria (em Breve)\nDoces para celebrar, presentear ou simplesmente se mimar, porque todo dia merece um agrado.\n\n> Quatro experiências, um só lugar: a Polpê's é um espaço **multi-experiência**.\n\n---\n\n## Nossa essência\n\n**Acolhimento.** Cada pessoa que chega é bem-vinda, e a gente quer que se sinta em casa.\n\n**Afeto.** Cuidamos dos detalhes porque acreditamos que o carinho se percebe no sabor.\n\n**Conexão.** Nossos sabores existem para aproximar pessoas e criar momentos que ficam na memória.\n\n**Energia.** Das cores ao atendimento, a Polpê's é alegre, vibrante e cheia de vida.\n\n## Como a gente conversa\n\nNa Polpê's, a conversa é de gente para gente: **simples, afetiva e convidativa**. Gostamos de frases curtas, de linguagem próxima e de um emoji de vez em quando 🍓🍨💜\n\n\nPolpê's · Sabores que conectam momentos! 💜",
+        "published": true
+      }
+    ]
+  },
+  "club": {
+    "enabled": true,
+    "plan_price": 19.9,
+    "google_review_url": ""
+  },
+  "categories": [
+    {
+      "name": "Açai",
+      "sort_order": 0,
+      "needs_config": true,
+      "is_addon": false,
+      "addons": [
+        {
+          "category": "Caldas Adicionais",
+          "min_select": 0,
+          "max_select": 1,
+          "free_qty": 0,
+          "sort_order": 1
+        },
+        {
+          "category": "Cremes Adicionais",
+          "min_select": 0,
+          "max_select": 2,
+          "free_qty": 0,
+          "sort_order": 2
+        },
+        {
+          "category": "Frutas Adicionais",
+          "min_select": 0,
+          "max_select": 0,
+          "free_qty": 0,
+          "sort_order": 3
+        },
+        {
+          "category": "Guloseimas Adicionais",
+          "min_select": 0,
+          "max_select": 0,
+          "free_qty": 4,
+          "sort_order": 4
+        }
+      ],
+      "products": [
+        {
+          "name": "Açai Tradicional 300ml",
+          "price": 13.45,
+          "description": "Açaí tradicional na porção de 300 ml.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630280260.png"
+        },
+        {
+          "name": "Açai Supremo 500ml",
+          "price": 18.24,
+          "description": "Açaí na porção de 500 ml.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630252420.png"
+        },
+        {
+          "name": "Açai Premium 700ml",
+          "price": 23.99,
+          "description": "Açaí na porção de 700 ml.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630227903.png"
+        },
+        {
+          "name": "Açai Max Família 1000ml",
+          "price": 40.0,
+          "description": "Açaí na porção de 1 litro, ideal para a família.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630204254.png"
+        },
+        {
+          "name": "Promoção Família 850ml",
+          "price": 35.0,
+          "description": "Açaí em marmitex de 850 ml.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630388281.png"
+        },
+        {
+          "name": "Combo TMJ",
+          "price": 31.5,
+          "description": "Combão com 300 ml + 500 ml de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630338051.png"
+        },
+        {
+          "name": "Combo Dois Amores",
+          "price": 32.7,
+          "description": "Combão com 2 potes de 500 ml.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630319497.png"
+        }
+      ]
+    },
+    {
+      "name": "Garrafinhas",
+      "sort_order": 0,
+      "needs_config": false,
+      "is_addon": false,
+      "products": [
+        {
+          "name": "Beijo da Vovó 300ml",
+          "price": 15.0,
+          "description": "Leite ninho com coco doce e cremoso, sabor caseiro. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Beijo da Vovó 500ml",
+          "price": 20.0,
+          "description": "Leite ninho com coco doce e cremoso, sabor caseiro. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Beijo da Vovó 1000ml",
+          "price": 33.0,
+          "description": "Leite ninho com coco doce e cremoso, sabor caseiro. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Brigadeiro Belga 300ml",
+          "price": 15.0,
+          "description": "Chocolate crocante com brigadeiro de chocolate intenso. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Brigadeiro Belga 500ml",
+          "price": 20.0,
+          "description": "Chocolate crocante com brigadeiro de chocolate intenso. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Brigadeiro Belga 1000ml",
+          "price": 33.0,
+          "description": "Chocolate crocante com brigadeiro de chocolate intenso. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Cappuccino Cremoso 300ml",
+          "price": 15.0,
+          "description": "Sabor marcante de cappuccino com calda de chocolate. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Cappuccino Cremoso 500ml",
+          "price": 20.0,
+          "description": "Sabor marcante de cappuccino com calda de chocolate. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Cappuccino Cremoso 1000ml",
+          "price": 33.0,
+          "description": "Sabor marcante de cappuccino com calda de chocolate. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Ferreiro Rocher 300ml",
+          "price": 15.0,
+          "description": "Nutella com amendoim crocante e chocolate intenso. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Ferreiro Rocher 500ml",
+          "price": 20.0,
+          "description": "Nutella com amendoim crocante e chocolate intenso. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Ferreiro Rocher 1000ml",
+          "price": 33.0,
+          "description": "Nutella com amendoim crocante e chocolate intenso. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Nutella Supreme 300ml",
+          "price": 15.0,
+          "description": "A irresistível Nutella em uma versão ainda mais cremosa. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Nutella Supreme 500ml",
+          "price": 20.0,
+          "description": "A irresistível Nutella em uma versão ainda mais cremosa. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Nutella Supreme 1000ml",
+          "price": 33.0,
+          "description": "A irresistível Nutella em uma versão ainda mais cremosa. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Olho de Sogra 300ml",
+          "price": 15.0,
+          "description": "Ameixa com leite ninho e coco. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Olho de Sogra 500ml",
+          "price": 20.0,
+          "description": "Ameixa com leite ninho e coco. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Olho de Sogra 1000ml",
+          "price": 33.0,
+          "description": "Ameixa com leite ninho e coco. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Oreo Supreme 300ml",
+          "price": 15.0,
+          "description": "Creme branco com pedaços crocantes de Oreo. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Oreo Supreme 500ml",
+          "price": 20.0,
+          "description": "Creme branco com pedaços crocantes de Oreo. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Oreo Supreme 1000ml",
+          "price": 33.0,
+          "description": "Creme branco com pedaços crocantes de Oreo. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Ovomaltine Crocante 300ml",
+          "price": 15.0,
+          "description": "A cremosidade do Ovomaltine com flocos crocantes. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Ovomaltine Crocante 500ml",
+          "price": 20.0,
+          "description": "A cremosidade do Ovomaltine com flocos crocantes. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Ovomaltine Crocante 1000ml",
+          "price": 33.0,
+          "description": "A cremosidade do Ovomaltine com flocos crocantes. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Paixão Tropical 300ml",
+          "price": 15.0,
+          "description": "Maracujá cremoso com sabor tropical e refrescante. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Paixão Tropical 500ml",
+          "price": 20.0,
+          "description": "Maracujá cremoso com sabor tropical e refrescante. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Paixão Tropical 1000ml",
+          "price": 33.0,
+          "description": "Maracujá cremoso com sabor tropical e refrescante. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Paçoca 300ml",
+          "price": 15.0,
+          "description": "Sabor intenso de paçoca com creme de paçoca na borda. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Paçoca 500ml",
+          "price": 20.0,
+          "description": "Sabor intenso de paçoca com creme de paçoca na borda. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Paçoca 1000ml",
+          "price": 33.0,
+          "description": "Sabor intenso de paçoca com creme de paçoca na borda. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Pudim Real 300ml",
+          "price": 15.0,
+          "description": "O sabor clássico do pudim com calda caramelizada. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Pudim Real 500ml",
+          "price": 20.0,
+          "description": "O sabor clássico do pudim com calda caramelizada. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Pudim Real 1000ml",
+          "price": 33.0,
+          "description": "O sabor clássico do pudim com calda caramelizada. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Romeu e Julieta 300ml",
+          "price": 15.0,
+          "description": "Queijo com calda de goiabada. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Romeu e Julieta 500ml",
+          "price": 20.0,
+          "description": "Queijo com calda de goiabada. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Romeu e Julieta 1000ml",
+          "price": 33.0,
+          "description": "Queijo com calda de goiabada. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Sensação 300ml",
+          "price": 15.0,
+          "description": "Morango cremoso com chocolate crocante. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Sensação 500ml",
+          "price": 20.0,
+          "description": "Morango cremoso com chocolate crocante. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Sensação 1000ml",
+          "price": 33.0,
+          "description": "Morango cremoso com chocolate crocante. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Sensação Branca 300ml",
+          "price": 15.0,
+          "description": "Chocolate branco crocante com morango em pedaços. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Sensação Branca 500ml",
+          "price": 20.0,
+          "description": "Chocolate branco crocante com morango em pedaços. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Sensação Branca 1000ml",
+          "price": 33.0,
+          "description": "Chocolate branco crocante com morango em pedaços. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Torta de Limão 300ml",
+          "price": 15.0,
+          "description": "Limão com pedaços de biscoito de leite. Garrafinha de 300ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Torta de Limão 500ml",
+          "price": 20.0,
+          "description": "Limão com pedaços de biscoito de leite. Garrafinha de 500ml.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Torta de Limão 1000ml",
+          "price": 33.0,
+          "description": "Limão com pedaços de biscoito de leite. Garrafinha de 1000ml.",
+          "sort_order": 0,
+          "in_stock": true
+        }
+      ]
+    },
+    {
+      "name": "Bolos Fatias",
+      "sort_order": 0,
+      "needs_config": false,
+      "is_addon": false,
+      "products": []
+    },
+    {
+      "name": "Guloseimas Adicionais",
+      "sort_order": 0,
+      "needs_config": false,
+      "is_addon": true,
+      "products": [
+        {
+          "name": "Granola",
+          "price": 0.0,
+          "description": "Guloseima — o cliente pode escolher até 4 gratuitamente no açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630506882.png"
+        },
+        {
+          "name": "Paçoca",
+          "price": 0.0,
+          "description": "Guloseima — o cliente pode escolher até 4 gratuitamente no açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630590373.png"
+        },
+        {
+          "name": "Amendoim",
+          "price": 0.0,
+          "description": "Guloseima — o cliente pode escolher até 4 gratuitamente no açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630092476.png"
+        },
+        {
+          "name": "Sucrilhos",
+          "price": 0.0,
+          "description": "Guloseima — o cliente pode escolher até 4 gratuitamente no açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630612166.png"
+        },
+        {
+          "name": "Chocobol",
+          "price": 0.0,
+          "description": "Guloseima — o cliente pode escolher até 4 gratuitamente no açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630460722.png"
+        },
+        {
+          "name": "Confete",
+          "price": 0.0,
+          "description": "Guloseima — o cliente pode escolher até 4 gratuitamente no açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630490704.png"
+        },
+        {
+          "name": "Jujuba",
+          "price": 0.0,
+          "description": "Guloseima — o cliente pode escolher até 4 gratuitamente no açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630570060.png"
+        },
+        {
+          "name": "Granulado Chocolate",
+          "price": 0.0,
+          "description": "Guloseima — o cliente pode escolher até 4 gratuitamente no açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630530869.png"
+        },
+        {
+          "name": "Granulado Colorido",
+          "price": 0.0,
+          "description": "Guloseima — o cliente pode escolher até 4 gratuitamente no açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630549117.png"
+        },
+        {
+          "name": "Leite em Pó",
+          "price": 0.0,
+          "description": "",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630673086.png"
+        },
+        {
+          "name": "Ovo Maltine",
+          "price": 0.0,
+          "description": "",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790630710665.png"
+        },
+        {
+          "name": "Sem guloseimas",
+          "price": 0.0,
+          "description": "Cliente não quer esta etapa do pedido.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790634327398.png"
+        }
+      ]
+    },
+    {
+      "name": "Cremes Adicionais",
+      "sort_order": 0,
+      "needs_config": false,
+      "is_addon": true,
+      "products": [
+        {
+          "name": "Creme de Nutella",
+          "price": 0.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633622903.png"
+        },
+        {
+          "name": "Creme de Pistache",
+          "price": 0.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633634982.png"
+        },
+        {
+          "name": "Creme de Leitinho",
+          "price": 0.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633581005.png"
+        },
+        {
+          "name": "Creme de Morango",
+          "price": 0.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633611047.png"
+        },
+        {
+          "name": "Creme de Maracujá",
+          "price": 0.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633596380.png"
+        },
+        {
+          "name": "Sem cremes",
+          "price": 0.0,
+          "description": "Cliente não quer esta etapa do pedido.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633649883.png"
+        }
+      ]
+    },
+    {
+      "name": "Frutas Adicionais",
+      "sort_order": 0,
+      "needs_config": false,
+      "is_addon": true,
+      "products": [
+        {
+          "name": "Banana",
+          "price": 2.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633689190.png"
+        },
+        {
+          "name": "Morango",
+          "price": 5.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633730559.png"
+        },
+        {
+          "name": "Manga",
+          "price": 3.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633713280.png"
+        },
+        {
+          "name": "Kiwi",
+          "price": 5.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633701024.png"
+        },
+        {
+          "name": "Pessego em Calda",
+          "price": 3.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633758683.png"
+        },
+        {
+          "name": "Abacaxi em Calda",
+          "price": 3.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633678404.png"
+        },
+        {
+          "name": "Sem frutas",
+          "price": 0.0,
+          "description": "Cliente não quer esta etapa do pedido.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633771471.png"
+        }
+      ]
+    },
+    {
+      "name": "Geladinhos",
+      "sort_order": 0,
+      "needs_config": false,
+      "is_addon": false,
+      "products": [
+        {
+          "name": "Pudim Real",
+          "price": 10.0,
+          "description": "O sabor clássico do pudim com calda caramelizada.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Romeu e Julieta",
+          "price": 10.0,
+          "description": "Queijo com calda de goiabada.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Oreo Supreme",
+          "price": 10.0,
+          "description": "Creme branco com pedaços crocantes de Oreo.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Ovomaltine Crocante",
+          "price": 10.0,
+          "description": "A cremosidade do Ovomaltine com flocos crocantes.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Cappuccino Cremoso",
+          "price": 10.0,
+          "description": "Sabor marcante de cappuccino com calda de chocolate.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Nutella Supreme",
+          "price": 10.0,
+          "description": "A irresistível Nutella em uma versão ainda mais cremosa.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Paixão Tropical",
+          "price": 10.0,
+          "description": "Maracujá cremoso com sabor tropical e refrescante.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Sensação",
+          "price": 10.0,
+          "description": "Morango cremoso com chocolate crocante.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Sensação Branca",
+          "price": 10.0,
+          "description": "Chocolate branco crocante com morango em pedaços.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Beijo da Vovó",
+          "price": 10.0,
+          "description": "Leite ninho com coco doce e cremoso, sabor caseiro.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Brigadeiro Belga",
+          "price": 10.0,
+          "description": "Chocolate crocante com brigadeiro de chocolate intenso.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Olho de Sogra",
+          "price": 10.0,
+          "description": "Ameixa com leite ninho e coco.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Torta de Limão",
+          "price": 10.0,
+          "description": "Limão com pedaços de biscoito de leite.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Paçoca Cremoso",
+          "price": 10.0,
+          "description": "Sabor intenso de paçoca com creme de paçoca na borda.",
+          "sort_order": 0,
+          "in_stock": true
+        },
+        {
+          "name": "Ferreiro Rocher",
+          "price": 10.0,
+          "description": "Nutella com amendoim crocante e chocolate intenso.",
+          "sort_order": 0,
+          "in_stock": true
+        }
+      ]
+    },
+    {
+      "name": "Caldas Adicionais",
+      "sort_order": 0,
+      "needs_config": false,
+      "is_addon": true,
+      "products": [
+        {
+          "name": "Calda de Chocolate",
+          "price": 0.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633441315.webp"
+        },
+        {
+          "name": "Calda de Pistache",
+          "price": 0.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633516026.jpeg"
+        },
+        {
+          "name": "Calda de Caramelo",
+          "price": 0.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633416268.webp"
+        },
+        {
+          "name": "Calda de Leite Condensado",
+          "price": 0.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633458191.webp"
+        },
+        {
+          "name": "Calda de Uva",
+          "price": 0.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633528957.webp"
+        },
+        {
+          "name": "Calda de Menta",
+          "price": 0.0,
+          "description": "Adicional pago — some o valor ao pote de açaí.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633476968.webp"
+        },
+        {
+          "name": "Sem calda",
+          "price": 0.0,
+          "description": "Cliente não quer esta etapa do pedido.",
+          "sort_order": 0,
+          "in_stock": true,
+          "photo": "statics/catalog/1790633545379.png"
+        }
+      ]
+    }
+  ]
+}

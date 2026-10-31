@@ -21,7 +21,8 @@ contêiner para outras instâncias no futuro.
 |---|---|
 | `seed/polpes-seed.sql` | Schema + dados de negócio para **SQLite** (idempotente) |
 | `seed/polpes-seed.postgres.sql` | Mesmo conteúdo para **PostgreSQL** (idempotente) |
-| `statics/catalog/` | 40 fotos do catálogo (39 produtos), 37 MB |
+| `seed/polpes-cardapio.json` | Cardápio completo para importar **pelo painel** (sem SSH) |
+| `statics/catalog/` | 40 fotos do catálogo (37 MB) |
 
 ## O que NÃO tem aqui (e por quê)
 
@@ -99,6 +100,38 @@ As fotos são servidas de `/app/statics/catalog/`. Copie para o volume do contê
 ```bash
 docker cp statics/catalog/. polpes:/app/statics/catalog/
 docker restart polpes
+```
+
+### Cardápio em JSON (pelo painel, sem SSH)
+
+`seed/polpes-cardapio.json` reconstrói o cardápio inteiro num banco vazio
+direto pela interface — sem `docker exec`, sem SQL:
+
+1. Painel → **Produtos** → **Importar JSON**
+2. Escolha o arquivo (ou cole o conteúdo) → **Importar**
+
+O que ele carrega:
+
+| Bloco | Conteúdo |
+|---|---|
+| `business` | nome, endereço, cidade, redes sociais |
+| `settings` | **prompt de funcionamento da IA**, horário, páginas institucionais |
+| `club` | plano ativo e preço |
+| `categories` | 8 categorias (4 de adicionais), 99 produtos e os vínculos de adicionais |
+
+A importação é **idempotente**: casa categoria por nome e produto por
+(categoria, nome), então rodar duas vezes não duplica nada. A opção "Remover o
+que não está no JSON" (`mode: "replace"`) apaga os produtos que sumiram do
+arquivo.
+
+Só conteúdo de negócio vai no arquivo: **nada de chave de API, senha do painel,
+chave Pix ou dados de clientes**.
+
+Para regerar depois de mudanças feitas no painel:
+
+```bash
+cd painel-whats-main
+venv/bin/python tools/export_menu_json.py ../polpes-data/seed/polpes-cardapio.json
 ```
 
 ---
