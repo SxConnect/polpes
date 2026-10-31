@@ -23,7 +23,7 @@ BEGIN TRANSACTION;
 
 -- ── product_categories ──────────────────────────────────────────
 
-CREATE TABLE product_categories (
+CREATE TABLE IF NOT EXISTS product_categories (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     name       TEXT    NOT NULL UNIQUE,
     sort_order INTEGER NOT NULL DEFAULT 0,
@@ -43,7 +43,7 @@ INSERT OR REPLACE INTO "product_categories" ("id", "name", "sort_order", "active
 
 -- ── products ────────────────────────────────────────────────────
 
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     category_id INTEGER NOT NULL REFERENCES product_categories(id) ON DELETE CASCADE,
     name        TEXT    NOT NULL,
@@ -160,7 +160,7 @@ INSERT OR REPLACE INTO "products" ("id", "category_id", "name", "description", "
 
 -- ── category_addons ─────────────────────────────────────────────
 
-CREATE TABLE category_addons (
+CREATE TABLE IF NOT EXISTS category_addons (
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
     category_id       INTEGER NOT NULL REFERENCES product_categories(id) ON DELETE CASCADE,
     addon_category_id INTEGER NOT NULL REFERENCES product_categories(id) ON DELETE CASCADE,
@@ -181,7 +181,7 @@ INSERT OR REPLACE INTO "category_addons" ("id", "category_id", "addon_category_i
 
 -- ── club_benefits ───────────────────────────────────────────────
 
-CREATE TABLE club_benefits (
+CREATE TABLE IF NOT EXISTS club_benefits (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT    NOT NULL,
     description TEXT    NOT NULL DEFAULT '',
@@ -200,7 +200,7 @@ INSERT OR REPLACE INTO "club_benefits" ("id", "name", "description", "active", "
 
 -- ── club_settings ───────────────────────────────────────────────
 
-CREATE TABLE club_settings (
+CREATE TABLE IF NOT EXISTS club_settings (
     key         TEXT PRIMARY KEY,
     value       TEXT NOT NULL DEFAULT ''
 );
@@ -212,7 +212,7 @@ INSERT OR REPLACE INTO "club_settings" ("key", "value") VALUES ('enabled', '1');
 
 -- ── delivery_zones ──────────────────────────────────────────────
 
-CREATE TABLE delivery_zones (
+CREATE TABLE IF NOT EXISTS delivery_zones (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     ate_km      REAL    NOT NULL,
     taxa        REAL    NOT NULL DEFAULT 0,
@@ -231,7 +231,7 @@ INSERT OR REPLACE INTO "delivery_zones" ("id", "ate_km", "taxa", "ativo", "sort_
 
 -- ── payment_methods ─────────────────────────────────────────────
 
-CREATE TABLE payment_methods (
+CREATE TABLE IF NOT EXISTS payment_methods (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     method_type  TEXT    NOT NULL,  -- dinheiro | pix | cartao_debito | cartao_credito
     label        TEXT    NOT NULL,
@@ -250,7 +250,7 @@ INSERT OR REPLACE INTO "payment_methods" ("id", "method_type", "label", "instruc
 
 -- ── cep_cache ───────────────────────────────────────────────────
 
-CREATE TABLE cep_cache (
+CREATE TABLE IF NOT EXISTS cep_cache (
     cep        TEXT PRIMARY KEY,
     latitude   REAL,
     longitude  REAL,
@@ -344,7 +344,7 @@ INSERT OR REPLACE INTO "cep_cache" ("cep", "latitude", "longitude", "logradouro"
 
 -- ── config ──────────────────────────────────────────────────────
 
-CREATE TABLE config (
+CREATE TABLE IF NOT EXISTS config (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
